@@ -4,130 +4,62 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>white board</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <title>Document</title>
     <style>
-      #iframe {
+      #myCanvas {
         float: left;
-        width: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        border: 10px solid #000;
+        cursor: crosshair;
+        background: white;
+        border-radius: 20px;
       }
 
-      #canvas {
-        border: 2px solid #000000;
+      #color {
         float: left;
+        margin-left: 10px;
+        width: 60px;
+        height: 60px;
       }
     </style>
   </head>
   <body>
-    <div id="iframe">
-      <canvas id="canvas" width="800px" height="800px"></canvas>
-    </div>
+    <canvas id="myCanvas" width="600" height="600"></canvas>
+    <input type="color" id="color" value="Color" />
 
-    <script>
-      $(document).ready(function () {
-        initialize();
-      });
+    <script type="text/javascript">
+      var points = new Array(),
+        colorInput = document.getElementById("color");
 
-      function getPosition(mouseEvent, sigCanvas) {
-        var rect = sigCanvas.getBoundingClientRect();
-        return {
-          X: mouseEvent.clientX - rect.left,
-          Y: mouseEvent.clientY - rect.top,
-        };
+      function start(e) {
+        var mouseX = e.pageX - canvas.offsetLeft;
+        var mouseY = e.pageY - canvas.offsetTop;
+        paint = true;
+        ctx.beginPath();
+        ctx.moveTo(mouseX, mouseY);
+        points[points.length] = [mouseX, mouseY];
       }
-
-      function initialize() {
-        var sigCanvas = document.getElementById("canvas");
-        var context = sigCanvas.getContext("2d");
-        context.strokeStyle = "#f8920f";
-        context.lineJoin = "round";
-        context.lineWidth = 10;
-        var background = new Image();
-        background.onload = function () {
-          context.drawImage(background, 0, 0);
-        };
-        var is_touch_device = "ontouchstart" in document.documentElement;
-
-        if (is_touch_device) {
-          var drawer = {
-            isDrawing: false,
-            touchstart: function (coors) {
-              context.beginPath();
-              context.moveTo(coors.x, coors.y);
-              this.isDrawing = true;
-            },
-            touchmove: function (coors) {
-              if (this.isDrawing) {
-                context.lineTo(coors.x, coors.y);
-                context.stroke();
-              }
-            },
-            touchend: function (coors) {
-              if (this.isDrawing) {
-                this.touchmove(coors);
-                this.isDrawing = false;
-              }
-            },
-          };
-          function draw(event) {
-            var coors = {
-              x: event.targetTouches[0].pageX,
-              y: event.targetTouches[0].pageY,
-            };
-            var obj = sigCanvas;
-
-            if (obj.offsetParent) {
-              do {
-                coors.x -= obj.offsetLeft;
-                coors.y -= obj.offsetTop;
-              } while ((obj = obj.offsetParent) != null);
-            }
-            drawer[event.type](coors);
-          }
-          sigCanvas.addEventListener("touchstart", draw, false);
-          sigCanvas.addEventListener("touchmove", draw, false);
-          sigCanvas.addEventListener("touchend", draw, false);
-          sigCanvas.addEventListener(
-            "touchmove",
-            function (event) {
-              event.preventDefault();
-            },
-            false
-          );
-        } else {
-          $("#canvas").mousedown(function (mouseEvent) {
-            var position = getPosition(mouseEvent, sigCanvas);
-            context.moveTo(position.X, position.Y);
-            context.beginPath();
-            $(this)
-              .mousemove(function (mouseEvent) {
-                drawLine(mouseEvent, sigCanvas, context);
-              })
-              .mouseup(function (mouseEvent) {
-                finishDrawing(mouseEvent, sigCanvas, context);
-              })
-              .mouseout(function (mouseEvent) {
-                finishDrawing(mouseEvent, sigCanvas, context);
-              });
-          });
+      function draw(e) {
+        if (paint) {
+          var mouseX = e.pageX - canvas.offsetLeft;
+          var mouseY = e.pageY - canvas.offsetTop;
+          ctx.lineTo(mouseX, mouseY);
+          ctx.stroke();
+          ctx.strokeStyle = colorInput.value;
+          ctx.lineJoin = ctx.lineCap = "round";
+          points[points.length] = [mouseX, mouseY];
         }
       }
-      function drawLine(mouseEvent, sigCanvas, context) {
-        var position = getPosition(mouseEvent, sigCanvas);
-
-        context.lineTo(position.X, position.Y);
-        context.stroke();
+      function stop(e) {
+        paint = false;
+        var s = JSON.stringify(points);
+        localStorage["lines"] = s;
       }
-
-      function finishDrawing(mouseEvent, sigCanvas, context) {
-        drawLine(mouseEvent, sigCanvas, context);
-
-        context.closePath();
-        $(sigCanvas).unbind("mousemove").unbind("mouseup").unbind("mouseout");
-      }
+      var paint = false;
+      var canvas = document.getElementById("myCanvas");
+      var ctx = canvas.getContext("2d");
+      canvas.addEventListener("mousedown", start);
+      canvas.addEventListener("mousemove", draw);
+      canvas.addEventListener("mouseup", stop);
     </script>
   </body>
 </html>
